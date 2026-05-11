@@ -1,6 +1,6 @@
 <?php
 // Automatic Environment Detection (Local vs Railway)
-$host = getenv('MYSQLHOST') ?: 'localhost';
+$host = getenv('MYSQLHOST') ?: '127.0.0.1';
 $dbname = getenv('MYSQLDATABASE') ?: 'youtube_clipper';
 $username = getenv('MYSQLUSER') ?: 'root';
 $password = getenv('MYSQLPASSWORD') ?: '';
