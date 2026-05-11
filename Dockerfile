@@ -1,5 +1,8 @@
 FROM php:8.2-apache
 
+# Fix Apache MPM error for Railway
+RUN a2dismod mpm_event && a2enmod mpm_prefork
+
 # Install system dependencies (FFmpeg and Python)
 RUN apt-get update && apt-get install -y \
     ffmpeg \
