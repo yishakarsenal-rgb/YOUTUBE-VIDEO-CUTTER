@@ -1,5 +1,5 @@
 [phases.setup]
-nixPkgs = ["php82", "php82Packages.pdo_mysql", "ffmpeg", "yt-dlp"]
+nixPkgs = ["php82", "php82Extensions.pdo_mysql", "ffmpeg", "yt-dlp"]
 
 [phases.build]
 cmds = ["mkdir -p downloads temp uploads", "chmod -R 777 downloads temp uploads"]
