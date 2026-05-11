@@ -2,6 +2,28 @@
 require_once 'auth.php';
 require_once 'db.php';
 
+// Helper to find tool paths in different environments
+function get_tool_path($tool) {
+    $path = shell_exec("which $tool 2>/dev/null");
+    if ($path) return trim($path);
+    
+    // Fallback common paths
+    $fallbacks = ["/usr/bin/$tool", "/usr/local/bin/$tool", "/app/bin/$tool", "/nix/var/nix/profiles/default/bin/$tool"];
+    foreach ($fallbacks as $f) {
+        if (file_exists($f)) return $f;
+    }
+    
+    // Special case for yt-dlp via python
+    if ($tool === 'yt-dlp' && shell_exec("python3 -m yt_dlp --version 2>/dev/null")) {
+        return "python3 -m yt_dlp";
+    }
+    
+    return $tool; // Last resort
+}
+
+$ytdlp = get_tool_path('yt-dlp');
+$ffmpeg = get_tool_path('ffmpeg');
+
 // Increase execution time for video processing
 set_time_limit(900); // 15 minutes
 ini_set('max_execution_time', 900);
@@ -23,7 +45,7 @@ if ($action === 'get_info') {
     }
 
     // Use yt-dlp to get video info
-    $command = "yt-dlp --dump-json " . escapeshellarg($url);
+    $command = "$ytdlp --dump-json " . escapeshellarg($url);
     $output = shell_exec($command);
     
     if (!$output) {
@@ -70,21 +92,32 @@ if ($action === 'clip') {
     }
 
     $file_id = uniqid('clip_');
+    $temp_file = $downloads_dir . $file_id . '.tmp';
     $output_file = $downloads_dir . $file_id . '.' . ($format == 'mp3' ? 'mp3' : 'mp4');
 
     // 1. Get Title
-    $video_title = trim(shell_exec("yt-dlp --get-title " . escapeshellarg($url)));
+    $video_title = trim(shell_exec("$ytdlp --get-title " . escapeshellarg($url)));
 
     // 2. Use yt-dlp's built-in section downloader (Requires FFmpeg in path)
     // This handles merging and URL signing automatically
     if ($format === 'mp3') {
-        $cmd = "yt-dlp --extract-audio --audio-format mp3 --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" " . escapeshellarg($url) . " -o " . escapeshellarg($output_file) . " 2>&1";
+        $cmd = "$ytdlp --extract-audio --audio-format mp3 --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" " . escapeshellarg($url) . " -o " . escapeshellarg($output_file) . " 2>&1";
     } else {
-        $format_selector = "bestvideo[height<=$quality]+bestaudio/best[height<=$quality]";
-        $cmd = "yt-dlp -f \"$format_selector\" --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" --force-keyframes-at-cuts " . escapeshellarg($url) . " -o " . escapeshellarg($output_file) . " 2>&1";
+        $cmd = "$ytdlp -f \"bestvideo[height<=$quality][ext=mp4]+bestaudio[ext=m4a]/best[height<=$quality][ext=mp4]/best\" " .
+               "--download-sections \"*$start_time-$end_time\" " .
+               "--force-keyframes-at-cuts " .
+               "--concurrent-fragments 5 " .
+               "--ffmpeg-location " . escapeshellarg($ffmpeg) . " " .
+               "-o " . escapeshellarg($temp_file) . " " .
+               escapeshellarg($url) . " 2>&1";
     }
 
     $process_output = shell_exec($cmd);
+    
+    // Rename temp file if necessary
+    if (file_exists($temp_file)) {
+        rename($temp_file, $output_file);
+    }
 
     // Because yt-dlp might append extension or slightly change name, we check for the file
     $final_file = $output_file;

@@ -81,8 +81,18 @@ if (!isLoggedIn()) {
 
         <!-- System Diagnostic -->
         <?php
-        $ffmpeg_ready = shell_exec('ffmpeg -version') || shell_exec('which ffmpeg');
-        $ytdlp_ready = shell_exec('yt-dlp --version') || shell_exec('which yt-dlp');
+        function get_tool_path_diag($tool) {
+            $path = shell_exec("which $tool 2>/dev/null");
+            if ($path) return trim($path);
+            $fallbacks = ["/usr/bin/$tool", "/usr/local/bin/$tool", "/app/bin/$tool", "/nix/var/nix/profiles/default/bin/$tool"];
+            foreach ($fallbacks as $f) { if (file_exists($f)) return $f; }
+            if ($tool === 'yt-dlp' && shell_exec("python3 -m yt_dlp --version 2>/dev/null")) return "python3 -m yt_dlp";
+            return $tool;
+        }
+        $ffmpeg_diag = get_tool_path_diag('ffmpeg');
+        $ytdlp_diag = get_tool_path_diag('yt-dlp');
+        $ffmpeg_ready = shell_exec("$ffmpeg_diag -version");
+        $ytdlp_ready = shell_exec("$ytdlp_diag --version");
         $downloads_path = __DIR__ . '/downloads';
         if (!file_exists($downloads_path)) mkdir($downloads_path, 0777, true);
         $write_ready = is_writable($downloads_path);
