@@ -5,4 +5,4 @@ nixPkgs = ["php82", "php82Extensions.pdo_mysql", "ffmpeg", "yt-dlp"]
 cmds = ["mkdir -p downloads temp uploads", "chmod -R 777 downloads temp uploads"]
 
 [start]
-cmd = "php -S 0.0.0.0:$PORT"
+cmd = "chmod -R 777 downloads temp uploads && php -S 0.0.0.0:$PORT"

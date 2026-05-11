@@ -82,8 +82,8 @@ if (!isLoggedIn()) {
         <!-- System Diagnostic -->
         <div class="glass-card animate-fade-in" style="padding: 1rem; margin-bottom: 2rem; display: flex; gap: 2rem; align-items: center; border-left: 4px solid #6366f1;">
             <div style="font-weight: 600; font-size: 0.9rem;">System Check:</div>
-            <div style="font-size: 0.8rem;">FFmpeg: <?php echo shell_exec('ffmpeg -version') ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
-            <div style="font-size: 0.8rem;">yt-dlp: <?php echo shell_exec('yt-dlp --version') ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
+            <div style="font-size: 0.8rem;">FFmpeg: <?php echo shell_exec('which ffmpeg') ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
+            <div style="font-size: 0.8rem;">yt-dlp: <?php echo shell_exec('which yt-dlp') ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
             <div style="font-size: 0.8rem;">Write Perms: <?php echo is_writable('downloads') ? '<span style="color:var(--accent)">✅ OK</span>' : '<span style="color:var(--danger)">❌ Restricted</span>'; ?></div>
         </div>
 
