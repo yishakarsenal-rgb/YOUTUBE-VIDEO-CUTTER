@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
     curl \
+    libmariadb-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install yt-dlp
