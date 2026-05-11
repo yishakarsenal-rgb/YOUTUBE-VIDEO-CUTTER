@@ -1,0 +1,8 @@
+[phases.setup]
+nixPkgs = ["php82", "php82Packages.pdo_mysql", "ffmpeg", "yt-dlp"]
+
+[phases.build]
+cmds = ["mkdir -p downloads temp uploads", "chmod -R 777 downloads temp uploads"]
+
+[start]
+cmd = "php -S 0.0.0.0:$PORT"

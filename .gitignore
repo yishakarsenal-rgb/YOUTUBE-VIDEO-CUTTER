@@ -1,0 +1,7 @@
+/downloads/*
+/temp/*
+/uploads/*
+.DS_Store
+*.log
+database/clip_history.sql
+includes/config.php
