@@ -13,7 +13,7 @@ RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o 
     && chmod a+rx /usr/local/bin/yt-dlp
 
 # Install PHP MySQL extension
-RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install pdo_mysql && docker-php-ext-enable pdo_mysql
 
 # Set up the app
 COPY . /app
@@ -24,4 +24,4 @@ RUN mkdir -p downloads temp uploads \
     && chmod -R 777 downloads temp uploads
 
 # Use the PORT provided by Railway
-CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-80} -t ."]
+CMD ["sh", "-c", "php -m && php -S 0.0.0.0:${PORT:-80} -t ."]
