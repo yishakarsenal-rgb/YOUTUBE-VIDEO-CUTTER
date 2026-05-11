@@ -84,7 +84,7 @@ if (!isLoggedIn()) {
         function get_tool_path_diag($tool) {
             $path = shell_exec("which $tool 2>/dev/null");
             if ($path) return trim($path);
-            $fallbacks = ["/usr/bin/$tool", "/usr/local/bin/$tool", "/app/bin/$tool", "/nix/var/nix/profiles/default/bin/$tool"];
+            $fallbacks = [__DIR__ . "/yt-dlp", "/usr/bin/$tool", "/usr/local/bin/$tool", "/app/bin/$tool"];
             foreach ($fallbacks as $f) { if (file_exists($f)) return $f; }
             if ($tool === 'yt-dlp' && shell_exec("python3 -m yt_dlp --version 2>/dev/null")) return "python3 -m yt_dlp";
             return $tool;

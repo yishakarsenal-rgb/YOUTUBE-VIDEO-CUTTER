@@ -8,7 +8,7 @@ function get_tool_path($tool) {
     if ($path) return trim($path);
     
     // Fallback common paths
-    $fallbacks = ["/usr/bin/$tool", "/usr/local/bin/$tool", "/app/bin/$tool", "/nix/var/nix/profiles/default/bin/$tool"];
+    $fallbacks = [__DIR__ . "/../yt-dlp", "/usr/bin/$tool", "/usr/local/bin/$tool", "/app/bin/$tool"];
     foreach ($fallbacks as $f) {
         if (file_exists($f)) return $f;
     }

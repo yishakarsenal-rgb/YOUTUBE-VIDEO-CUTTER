@@ -1,8 +1,13 @@
 [phases.setup]
-nixPkgs = ["php82", "php82Extensions.pdo_mysql", "ffmpeg", "python311", "python311Packages.pip"]
+nixPkgs = ["php82", "php82Extensions.pdo_mysql", "ffmpeg", "python311"]
 
 [phases.build]
-cmds = ["python3 -m pip install yt-dlp", "mkdir -p downloads temp uploads", "chmod -R 777 downloads temp uploads"]
+cmds = [
+    "curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o yt-dlp",
+    "chmod a+rx yt-dlp",
+    "mkdir -p downloads temp uploads",
+    "chmod -R 777 downloads temp uploads"
+]
 
 [start]
-cmd = "chmod -R 777 downloads temp uploads && php -S 0.0.0.0:$PORT"
+cmd = "chmod a+rx yt-dlp && chmod -R 777 downloads temp uploads && php -S 0.0.0.0:$PORT"
