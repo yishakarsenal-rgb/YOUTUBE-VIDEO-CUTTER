@@ -80,11 +80,18 @@ if (!isLoggedIn()) {
         </header>
 
         <!-- System Diagnostic -->
+        <?php
+        $ffmpeg_ready = shell_exec('ffmpeg -version') || shell_exec('which ffmpeg');
+        $ytdlp_ready = shell_exec('yt-dlp --version') || shell_exec('which yt-dlp');
+        $downloads_path = __DIR__ . '/downloads';
+        if (!file_exists($downloads_path)) mkdir($downloads_path, 0777, true);
+        $write_ready = is_writable($downloads_path);
+        ?>
         <div class="glass-card animate-fade-in" style="padding: 1rem; margin-bottom: 2rem; display: flex; gap: 2rem; align-items: center; border-left: 4px solid #6366f1;">
             <div style="font-weight: 600; font-size: 0.9rem;">System Check:</div>
-            <div style="font-size: 0.8rem;">FFmpeg: <?php echo shell_exec('which ffmpeg') ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
-            <div style="font-size: 0.8rem;">yt-dlp: <?php echo shell_exec('which yt-dlp') ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
-            <div style="font-size: 0.8rem;">Write Perms: <?php echo is_writable('downloads') ? '<span style="color:var(--accent)">✅ OK</span>' : '<span style="color:var(--danger)">❌ Restricted</span>'; ?></div>
+            <div style="font-size: 0.8rem;">FFmpeg: <?php echo $ffmpeg_ready ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
+            <div style="font-size: 0.8rem;">yt-dlp: <?php echo $ytdlp_ready ? '<span style="color:var(--accent)">✅ Ready</span>' : '<span style="color:var(--danger)">❌ Not Found</span>'; ?></div>
+            <div style="font-size: 0.8rem;">Write Perms: <?php echo $write_ready ? '<span style="color:var(--accent)">✅ OK</span>' : '<span style="color:var(--danger)">❌ Restricted</span>'; ?></div>
         </div>
 
         <div class="dashboard-container">
