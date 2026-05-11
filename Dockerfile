@@ -1,29 +1,26 @@
-FROM php:8.2-apache
+FROM php:8.2-cli
 
-# Fix Apache MPM error for Railway
-RUN a2dismod mpm_event && a2enmod mpm_prefork
-
-# Install system dependencies (FFmpeg and Python)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     ffmpeg \
     python3 \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp directly
+# Install yt-dlp
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
 
 # Install PHP MySQL extension
 RUN docker-php-ext-install pdo_mysql
 
-# Copy your code into the server
-COPY . /var/www/html/
+# Set up the app
+COPY . /app
+WORKDIR /app
 
 # Create working folders and set permissions
-RUN mkdir -p /var/www/html/downloads /var/www/html/temp /var/www/html/uploads \
-    && chmod -R 777 /var/www/html/downloads /var/www/html/temp /var/www/html/uploads
+RUN mkdir -p downloads temp uploads \
+    && chmod -R 777 downloads temp uploads
 
-# Set the port
-ENV PORT=80
-EXPOSE 80
+# Use the PORT provided by Railway
+CMD ["sh", "-c", "php -S 0.0.0.0:${PORT:-80} -t ."]
