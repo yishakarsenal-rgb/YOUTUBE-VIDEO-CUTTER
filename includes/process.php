@@ -44,18 +44,24 @@ if ($action === 'get_info') {
     }
 
     // Use yt-dlp to get video info
-    $command = "$ytdlp --dump-json " . escapeshellarg($url);
+    $command = "$ytdlp --dump-json --no-warnings " . escapeshellarg($url);
     $output_lines = [];
     exec("$command 2>&1", $output_lines);
     $output = implode("\n", $output_lines);
     
-    if (empty($output_lines) || strpos($output, '{') === false) {
-        die(json_encode(['error' => 'Could not fetch video info. Details: ' . substr($output, 0, 100)]));
+    // Find the actual JSON object (it might be surrounded by warnings)
+    $start = strpos($output, '{');
+    $end = strrpos($output, '}');
+    
+    if ($start === false || $end === false) {
+        die(json_encode(['error' => 'Could not find video data. Details: ' . substr($output, 0, 200)]));
     }
 
-    $data = json_decode($output, true);
+    $json = substr($output, $start, $end - $start + 1);
+    $data = json_decode($json, true);
+    
     if (!$data) {
-        die(json_encode(['error' => 'Failed to parse video data.']));
+        die(json_encode(['error' => 'Failed to parse video data. Response was not valid JSON.']));
     }
 
     echo json_encode([
