@@ -28,19 +28,19 @@ document.addEventListener('DOMContentLoaded', () => {
             const response = await fetch('includes/process.php?action=get_info&url=' + encodeURIComponent(url));
             const data = await response.json();
 
-            if (data.success) {
-                document.getElementById('video-thumbnail').src = data.info.thumbnail;
-                document.getElementById('video-title').textContent = data.info.title;
-                document.getElementById('video-meta').textContent = `Duration: ${data.info.duration_string} • ${data.info.uploader}`;
+            if (data.title) {
+                document.getElementById('video-thumbnail').src = data.thumbnail;
+                document.getElementById('video-title').textContent = data.title;
+                document.getElementById('video-meta').textContent = `Duration: ${data.duration_str}`;
                 
                 // Show preview section
                 previewSection.style.display = 'flex';
                 previewSection.scrollIntoView({ behavior: 'smooth' });
                 
                 // Set default end time based on duration (or max 10s)
-                document.getElementById('end-time').value = data.info.duration > 10 ? '00:00:10' : data.info.duration_string;
+                document.getElementById('end-time').value = data.duration > 10 ? '00:00:10' : data.duration_str;
             } else {
-                alert('Error: ' + data.message);
+                alert('Error: ' + (data.error || 'Failed to fetch info'));
             }
         } catch (error) {
             alert('An error occurred while fetching video info.');
@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
         updateProgress(10, 'Downloading video...');
 
         const formData = new FormData();
-        formData.append('action', 'clip');
+        formData.append('action', 'clip_video');
         formData.append('url', url);
         formData.append('start_time', startTime);
         formData.append('end_time', endTime);
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             const data = await response.json();
 
-            if (data.success) {
+            if (data.file_url) {
                 updateProgress(100, 'Success!');
                 progressStatus.innerHTML = `Done! <button onclick="copyToClipboard('${window.location.origin + '/' + data.file_url}')" class="btn" style="padding: 2px 8px; font-size: 0.7rem; background: rgba(255,255,255,0.1); margin-left: 10px;">📋 Copy Link</button>`;
                 
@@ -96,13 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Clip generated successfully!');
             } else {
                 updateProgress(0, 'Failed');
-                alert(data.message);
-                if (data.debug) {
-                    const logBox = document.createElement('div');
-                    logBox.className = 'glass-card debug-log';
-                    logBox.innerHTML = `<strong>Error Log:</strong><pre>${data.debug}</pre>`;
-                    progressSection.appendChild(logBox);
-                }
+                alert(data.error || 'Processing failed');
             }
         } catch (error) {
             alert('An error occurred during processing.');
