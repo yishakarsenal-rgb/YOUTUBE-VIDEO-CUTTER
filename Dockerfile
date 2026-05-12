@@ -11,7 +11,7 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PHP MySQL extension
-RUN docker-php-ext-install pdo_mysql
+RUN docker-php-ext-install pdo_mysql && docker-php-ext-enable pdo_mysql
 
 # Install yt-dlp via Pip
 RUN pip3 install yt-dlp --break-system-packages
@@ -24,5 +24,5 @@ WORKDIR /app
 RUN mkdir -p downloads temp uploads \
     && chmod -R 777 downloads temp uploads
 
-# FORCE the extension to load in the start command
-CMD ["php", "-d", "extension=pdo_mysql.so", "-S", "0.0.0.0:${PORT:-80}", "-t", "."]
+# Use shell format to correctly expand the PORT variable
+CMD sh -c "php -S 0.0.0.0:${PORT:-80} -t ."
