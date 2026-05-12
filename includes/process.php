@@ -4,18 +4,15 @@ require_once 'db.php';
 
 // Helper to find tool paths in different environments
 function get_tool_path($tool) {
-    $path = shell_exec("which $tool 2>/dev/null");
-    if ($path) return trim($path);
+    $output = [];
+    exec("which $tool 2>/dev/null", $output);
+    $path = !empty($output) ? trim($output[0]) : null;
+    if ($path) return $path;
     
     // Fallback common paths
     $fallbacks = [__DIR__ . "/../yt-dlp", "/usr/bin/$tool", "/usr/local/bin/$tool", "/app/bin/$tool"];
     foreach ($fallbacks as $f) {
         if (file_exists($f)) return $f;
-    }
-    
-    // Special case for yt-dlp via python
-    if ($tool === 'yt-dlp' && shell_exec("python3 -m yt_dlp --version 2>/dev/null")) {
-        return "python3 -m yt_dlp";
     }
     
     return $tool; // Last resort
@@ -27,6 +24,8 @@ $ffmpeg = get_tool_path('ffmpeg');
 // Increase execution time for video processing
 set_time_limit(900); // 15 minutes
 ini_set('max_execution_time', 900);
+
+$shell_disabled = !function_exists('exec') || strpos(ini_get('disable_functions'), 'exec') !== false;
 
 header('Content-Type: application/json');
 
@@ -46,49 +45,42 @@ if ($action === 'get_info') {
 
     // Use yt-dlp to get video info
     $command = "$ytdlp --dump-json " . escapeshellarg($url);
-    $output = shell_exec($command);
+    $output_lines = [];
+    exec("$command 2>&1", $output_lines);
+    $output = implode("\n", $output_lines);
     
-    if (!$output) {
-        echo json_encode(['success' => false, 'message' => 'Could not fetch video info. Ensure yt-dlp is in PATH.']);
-        exit();
+    if (empty($output_lines) || strpos($output, '{') === false) {
+        die(json_encode(['error' => 'Could not fetch video info. Details: ' . substr($output, 0, 100)]));
     }
 
-    $info = json_decode($output, true);
-    if (!$info) {
-        echo json_encode(['success' => false, 'message' => 'Failed to parse video info.']);
-        exit();
+    $data = json_decode($output, true);
+    if (!$data) {
+        die(json_encode(['error' => 'Failed to parse video data.']));
     }
 
-    $response = [
-        'success' => true,
-        'info' => [
-            'title' => $info['title'],
-            'thumbnail' => $info['thumbnail'],
-            'duration' => $info['duration'],
-            'duration_string' => gmdate("H:i:s", $info['duration']),
-            'uploader' => $info['uploader']
-        ]
-    ];
-    echo json_encode($response);
-    exit();
+    echo json_encode([
+        'title' => $data['title'] ?? 'Unknown Title',
+        'thumbnail' => $data['thumbnail'] ?? '',
+        'duration' => $data['duration'] ?? 0,
+        'duration_str' => gmdate("H:i:s", $data['duration'] ?? 0)
+    ]);
+    exit;
 }
 
-if ($action === 'clip') {
+if ($action === 'clip_video') {
     $url = $_POST['url'] ?? '';
     $start_time = $_POST['start_time'] ?? '00:00:00';
     $end_time = $_POST['end_time'] ?? '00:00:10';
-    $format = $_POST['format'] ?? 'mp4';
     $quality = $_POST['quality'] ?? '720';
+    $format = $_POST['format'] ?? 'mp4';
 
     if (empty($url)) {
-        echo json_encode(['success' => false, 'message' => 'URL is required']);
-        exit();
+        die(json_encode(['error' => 'Video URL is required']));
     }
 
-    $downloads_dir = '../downloads/';
-    if (!is_writable($downloads_dir)) {
-        echo json_encode(['success' => false, 'message' => 'Download folder not writable.']);
-        exit();
+    $downloads_dir = __DIR__ . '/../downloads/';
+    if (!file_exists($downloads_dir)) {
+        mkdir($downloads_dir, 0777, true);
     }
 
     $file_id = uniqid('clip_');
@@ -96,12 +88,13 @@ if ($action === 'clip') {
     $output_file = $downloads_dir . $file_id . '.' . ($format == 'mp3' ? 'mp3' : 'mp4');
 
     // 1. Get Title
-    $video_title = trim(shell_exec("$ytdlp --get-title " . escapeshellarg($url)));
+    $title_out = [];
+    exec("$ytdlp --get-title " . escapeshellarg($url), $title_out);
+    $video_title = !empty($title_out) ? trim($title_out[0]) : 'YouTube Clip';
 
-    // 2. Use yt-dlp's built-in section downloader (Requires FFmpeg in path)
-    // This handles merging and URL signing automatically
+    // 2. Use yt-dlp's built-in section downloader
     if ($format === 'mp3') {
-        $cmd = "$ytdlp --extract-audio --audio-format mp3 --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" " . escapeshellarg($url) . " -o " . escapeshellarg($output_file) . " 2>&1";
+        $cmd = "$ytdlp --extract-audio --audio-format mp3 --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" " . escapeshellarg($url) . " -o " . escapeshellarg($output_file);
     } else {
         $cmd = "$ytdlp -f \"bestvideo[height<=$quality][ext=mp4]+bestaudio[ext=m4a]/best[height<=$quality][ext=mp4]/best\" " .
                "--download-sections \"*$start_time-$end_time\" " .
@@ -109,10 +102,12 @@ if ($action === 'clip') {
                "--concurrent-fragments 5 " .
                "--ffmpeg-location " . escapeshellarg($ffmpeg) . " " .
                "-o " . escapeshellarg($temp_file) . " " .
-               escapeshellarg($url) . " 2>&1";
+               escapeshellarg($url);
     }
 
-    $process_output = shell_exec($cmd);
+    $process_out = [];
+    exec("$cmd 2>&1", $process_out);
+    $process_output = implode("\n", $process_out);
     
     // Rename temp file if necessary
     if (file_exists($temp_file)) {
