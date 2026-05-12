@@ -21,6 +21,10 @@ function get_tool_path($tool) {
 $ytdlp = get_tool_path('yt-dlp');
 $ffmpeg = get_tool_path('ffmpeg');
 
+// Cookie support for bot bypass
+$cookies_file = __DIR__ . '/../cookies.txt';
+$cookie_arg = file_exists($cookies_file) ? "--cookies " . escapeshellarg($cookies_file) : "";
+
 // Increase execution time for video processing
 set_time_limit(900); // 15 minutes
 ini_set('max_execution_time', 900);
@@ -43,8 +47,8 @@ if ($action === 'get_info') {
         exit();
     }
 
-    // Use yt-dlp to get video info with anti-bot bypass
-    $command = "$ytdlp --dump-json --no-warnings --extractor-args \"youtube:player_client=android,web\" " . escapeshellarg($url);
+    // Use yt-dlp to get video info with iOS bypass
+    $command = "$ytdlp $cookie_arg --dump-json --no-warnings --extractor-args \"youtube:player_client=ios\" " . escapeshellarg($url);
     $output_lines = [];
     exec("$command 2>&1", $output_lines);
     $output = implode("\n", $output_lines);
@@ -95,11 +99,11 @@ if ($action === 'clip_video') {
 
     // 1. Get Title
     $title_out = [];
-    exec("$ytdlp --get-title " . escapeshellarg($url), $title_out);
+    exec("$ytdlp $cookie_arg --get-title " . escapeshellarg($url), $title_out);
     $video_title = !empty($title_out) ? trim($title_out[0]) : 'YouTube Clip';
 
-    // 2. Use yt-dlp's built-in section downloader with anti-bot bypass
-    $bot_bypass = "--extractor-args \"youtube:player_client=android,web\"";
+    // 2. Use yt-dlp's built-in section downloader with iOS bypass
+    $bot_bypass = "$cookie_arg --extractor-args \"youtube:player_client=ios\"";
     if ($format === 'mp3') {
         $cmd = "$ytdlp $bot_bypass --extract-audio --audio-format mp3 --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" " . escapeshellarg($url) . " -o " . escapeshellarg($output_file);
     } else {
