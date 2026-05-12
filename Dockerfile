@@ -7,11 +7,13 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     curl \
     nodejs \
-    libmariadb-dev-compat \
     libmariadb-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install yt-dlp via Pip (Most reliable method)
+# Install PHP MySQL extension
+RUN docker-php-ext-install pdo_mysql
+
+# Install yt-dlp via Pip
 RUN pip3 install yt-dlp --break-system-packages
 
 # Set up the app
@@ -22,5 +24,5 @@ WORKDIR /app
 RUN mkdir -p downloads temp uploads \
     && chmod -R 777 downloads temp uploads
 
-# Use the PORT provided by Railway and list modules for debugging
-CMD ["sh", "-c", "php -m && php -S 0.0.0.0:${PORT:-80} -t ."]
+# FORCE the extension to load in the start command
+CMD ["php", "-d", "extension=pdo_mysql.so", "-S", "0.0.0.0:${PORT:-80}", "-t", "."]
