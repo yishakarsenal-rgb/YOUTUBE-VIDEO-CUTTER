@@ -120,22 +120,14 @@ if ($action === 'clip_video') {
         rename($temp_file, $output_file);
     }
 
-    // Because yt-dlp might append extension or slightly change name, we check for the file
-    $final_file = $output_file;
-    if (!file_exists($final_file)) {
-        // Sometimes yt-dlp adds .mp4 even if we specify it
-        if (file_exists($output_file . '.mp4')) $final_file = $output_file . '.mp4';
-        if (file_exists($output_file . '.webm')) $final_file = $output_file . '.webm';
-    }
-
-    if (file_exists($final_file)) {
+    if (file_exists($output_file)) {
         $start_sec = strtotime("1970-01-01 $start_time UTC");
         $end_sec = strtotime("1970-01-01 $end_time UTC");
         
         $stmt = $pdo->prepare("INSERT INTO clip_history (user_id, video_url, video_title, start_time, end_time, duration, file_name, format, quality) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([
             $_SESSION['user_id'], $url, $video_title, $start_time, $end_time, 
-            gmdate("H:i:s", $end_sec - $start_sec), basename($final_file), $format, $quality
+            gmdate("H:i:s", $end_sec - $start_sec), basename($output_file), $format, $quality
         ]);
 
         echo json_encode([

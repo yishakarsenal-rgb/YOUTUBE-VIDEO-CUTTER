@@ -96,7 +96,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert('Clip generated successfully!');
             } else {
                 updateProgress(0, 'Failed');
-                alert(data.error || 'Processing failed');
+                let errorMsg = data.error || 'Processing failed';
+                if (data.details) errorMsg += "\n\nDetails: " + data.details;
+                alert(errorMsg);
             }
         } catch (error) {
             alert('An error occurred during processing.');
