@@ -6,7 +6,8 @@ RUN apk add --no-cache \
     python3 \
     curl \
     mariadb-dev \
-    build-base
+    build-base \
+    nodejs
 
 # Install PHP MySQL extension
 RUN docker-php-ext-install pdo_mysql
