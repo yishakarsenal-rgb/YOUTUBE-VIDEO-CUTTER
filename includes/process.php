@@ -43,8 +43,8 @@ if ($action === 'get_info') {
         exit();
     }
 
-    // Use yt-dlp to get video info
-    $command = "$ytdlp --dump-json --no-warnings " . escapeshellarg($url);
+    // Use yt-dlp to get video info with anti-bot bypass
+    $command = "$ytdlp --dump-json --no-warnings --extractor-args \"youtube:player_client=android,web\" " . escapeshellarg($url);
     $output_lines = [];
     exec("$command 2>&1", $output_lines);
     $output = implode("\n", $output_lines);
@@ -98,11 +98,12 @@ if ($action === 'clip_video') {
     exec("$ytdlp --get-title " . escapeshellarg($url), $title_out);
     $video_title = !empty($title_out) ? trim($title_out[0]) : 'YouTube Clip';
 
-    // 2. Use yt-dlp's built-in section downloader
+    // 2. Use yt-dlp's built-in section downloader with anti-bot bypass
+    $bot_bypass = "--extractor-args \"youtube:player_client=android,web\"";
     if ($format === 'mp3') {
-        $cmd = "$ytdlp --extract-audio --audio-format mp3 --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" " . escapeshellarg($url) . " -o " . escapeshellarg($output_file);
+        $cmd = "$ytdlp $bot_bypass --extract-audio --audio-format mp3 --concurrent-fragments 5 --download-sections \"*$start_time-$end_time\" " . escapeshellarg($url) . " -o " . escapeshellarg($output_file);
     } else {
-        $cmd = "$ytdlp -f \"bestvideo[height<=$quality][ext=mp4]+bestaudio[ext=m4a]/best[height<=$quality][ext=mp4]/best\" " .
+        $cmd = "$ytdlp $bot_bypass -f \"bestvideo[height<=$quality][ext=mp4]+bestaudio[ext=m4a]/best[height<=$quality][ext=mp4]/best\" " .
                "--download-sections \"*$start_time-$end_time\" " .
                "--force-keyframes-at-cuts " .
                "--concurrent-fragments 5 " .
