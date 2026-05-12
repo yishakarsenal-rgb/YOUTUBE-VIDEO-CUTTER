@@ -1,19 +1,19 @@
-FROM php:8.2-cli
+FROM php:8.2-cli-alpine
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies (Alpine version)
+RUN apk add --no-cache \
     ffmpeg \
     python3 \
     curl \
-    libmariadb-dev \
-    && rm -rf /var/lib/apt/lists/*
+    mariadb-dev \
+    build-base
+
+# Install PHP MySQL extension
+RUN docker-php-ext-install pdo_mysql
 
 # Install yt-dlp
 RUN curl -L https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp -o /usr/local/bin/yt-dlp \
     && chmod a+rx /usr/local/bin/yt-dlp
-
-# Install PHP MySQL extension
-RUN docker-php-ext-install pdo_mysql && docker-php-ext-enable pdo_mysql
 
 # Set up the app
 COPY . /app
@@ -23,5 +23,5 @@ WORKDIR /app
 RUN mkdir -p downloads temp uploads \
     && chmod -R 777 downloads temp uploads
 
-# Use the PORT provided by Railway
+# Use the PORT provided by Railway and list modules for debugging
 CMD ["sh", "-c", "php -m && php -S 0.0.0.0:${PORT:-80} -t ."]
